@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+numpy
+pandas
+scipy
+scikit-learn
+statsmodels
+python-docx
+openpyxl
+python-multipart
+pyreadstat
