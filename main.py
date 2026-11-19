@@ -65,7 +65,6 @@ class ComputeColumnRequest(BaseModel):
     expression: str
 
 
-# Güvenli AST Matematik İfadeleri Değerlendirici (eval yerine)
 SAFE_OPS = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
@@ -328,7 +327,6 @@ async def compute_column(req: ComputeColumnRequest):
 async def run_analysis(req: AnalysisRequest):
     REPORT_HISTORY.setdefault(req.session_id, [])
 
-    # GÜÇ ANALİZİ (VERİ GEREKTİRMEZ)
     if req.test_type == "power":
         power_t = TTestIndPower()
         n_per_group = power_t.solve_power(effect_size=req.effect_size, alpha=req.alpha, power=req.power_target, alternative="two-sided")
@@ -423,7 +421,7 @@ async def run_analysis(req: AnalysisRequest):
             })
         tables.append({"title": f"Tek Örneklem T-Testi (Test Değeri = {req.mu0})", "rows": rows})
         r0 = rows[0]
-        apa_note = f"Tek örneklem t-testi sonucuna göre {r0['Değişken']} ortalaması ({r0['Ortalama']}) test değeri olan {req.mu0}'dan t({r0['df']}) = {r0['t']}, p {r0['p']}, d = {r0['Cohen\'s d']} düzeyinde farklılaşmaktadır."
+        apa_note = f"Tek örneklem t-testi sonucuna göre {r0['Değişken']} ortalaması ({r0['Ortalama']}) test değeri olan {req.mu0}'dan t({r0['df']}) = {r0['t']}, p {r0['p']}, d = {r0[\"Cohen's d\"]} düzeyinde farklılaşmaktadır."
         r_code = f"t.test(df[['{req.dependent_vars[0]}']], mu = {req.mu0})"
 
     # 3. BAĞIMSIZ İKİ ÖRNEKLEM T-TESTİ
@@ -471,7 +469,7 @@ async def run_analysis(req: AnalysisRequest):
         tables.append({"title": "Bağımsız Örneklem T-Testi Sonuçları", "rows": rows})
         tables.append({"title": "Grup Tanımlayıcı İstatistikleri", "rows": group_summary})
         r0 = rows[0]
-        apa_note = f"Bağımsız örneklem t-testi ({r0['Yöntem']}) sonucuna göre {groups[0]} (Ort. = {group_summary[0]['Ortalama']}, SD = {group_summary[0]['SD']}) ile {groups[1]} (Ort. = {group_summary[1]['Ortalama']}, SD = {group_summary[1]['SD']}) grupları arasında {r0['Değişken']} bakımından t({r0['df']}) = {r0['t']}, p {r0['p']}, d = {r0['Cohen\'s d']} elde edilmiştir."
+        apa_note = f"Bağımsız örneklem t-testi ({r0['Yöntem']}) sonucuna göre {groups[0]} (Ort. = {group_summary[0]['Ortalama']}, SD = {group_summary[0]['SD']}) ile {groups[1]} (Ort. = {group_summary[1]['Ortalama']}, SD = {group_summary[1]['SD']}) grupları arasında {r0['Değişken']} bakımından t({r0['df']}) = {r0['t']}, p {r0['p']}, d = {r0[\"Cohen's d\"]} elde edilmiştir."
         chart_data = {
             "type": "bar_error",
             "title": f"{req.group_var} Gruplarına Göre {req.dependent_vars[0]} (±SE)",
@@ -736,7 +734,6 @@ async def run_analysis(req: AnalysisRequest):
         df2 = float(row0["Den DF"])
         p_unc = float(row0["Pr > F"])
 
-        # Greenhouse-Geisser epsilon hesabı
         Y = sub[req.dependent_vars].values
         Y_centered = Y - Y.mean(axis=1, keepdims=True) - Y.mean(axis=0, keepdims=True) + Y.mean()
         S = np.cov(Y_centered, rowvar=False)
@@ -799,7 +796,7 @@ async def run_analysis(req: AnalysisRequest):
         apa_note = f"{cov} kovaryantı kontrol altına alındığında {grp} gruplarının {var} üzerindeki düzeltilmiş etkisi ANCOVA ile incelenmiştir."
         r_code = f"fit <- aov({var} ~ {cov} + as.factor({grp}), data = df)\nsummary(fit)"
 
-    # 11. MANOVA (YAPISAL VERİ OKUMA)
+    # 11. MANOVA
     elif req.test_type == "manova":
         report_title = "MANOVA Çok Değişkenli Analiz"
         if not req.group_var or len(req.dependent_vars) < 2:
@@ -831,7 +828,7 @@ async def run_analysis(req: AnalysisRequest):
         apa_note = f"MANOVA sonucunda {req.group_var} grupları arasında bağımlı değişkenlerin birleşik vektörü Wilks' Λ = {w0['Değer']}, F({w0['Num DF']}, {w0['Den DF']}) = {w0['F']}, p {w0['Pr > F']} düzeyinde değerlendirilmiştir."
         r_code = f"fit <- manova(cbind({', '.join(req.dependent_vars)}) ~ as.factor({req.group_var}), data = df)\nsummary(fit, test = 'Wilks')"
 
-    # 12. PARAMETRİK OLMAYAN TESTLER (MANN-WHITNEY / KRUSKAL)
+    # 12. PARAMETRİK OLMAYAN TESTLER
     elif req.test_type == "nonparam":
         report_title = "Parametrik Olmayan Grup Testi"
         if not req.group_var or not req.dependent_vars:
@@ -989,7 +986,7 @@ async def run_analysis(req: AnalysisRequest):
         apa_note = f"McNemar testi sonucunda {v1} ve {v2} ölçümleri arasındaki kategorik değişim χ²(1) = {chi2_mc:.3f}, p {fmt_p(p_mc)} olarak bulunmuştur."
         r_code = f"mcnemar.test(table(df[['{v1}']], df[['{v2}']]))"
 
-    # 17. CRONBACH'S ALPHA + MADDE ANALİZİ
+    # 17. CRONBACH'S ALPHA
     elif req.test_type == "cronbach":
         report_title = "Cronbach's Alpha Güvenilirlik"
         if len(req.dependent_vars) < 2:
@@ -1030,7 +1027,7 @@ async def run_analysis(req: AnalysisRequest):
         vars_str = ", ".join([f'"{v}"' for v in req.dependent_vars])
         r_code = f"items <- na.omit(df[, c({vars_str})])\nk <- ncol(items)\n(k / (k - 1)) * (1 - sum(apply(items, 2, var)) / var(rowSums(items)))"
 
-    # 18. EFA + KMO + BARTLETT KÜRESELLİK TESTİ
+    # 18. EFA + KMO + BARTLETT
     elif req.test_type == "efa":
         report_title = "Açımlayıcı Faktör Analizi (EFA)"
         if len(req.dependent_vars) < 3:
