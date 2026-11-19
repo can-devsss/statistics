@@ -1320,9 +1320,48 @@
     hydrateData(data);
   }
 
-  function exportWord() { window.location.href = `/api/export-docx?session_id=${SESSION_ID}`; }
-  function exportExcel() { window.location.href = `/api/export-xlsx?session_id=${SESSION_ID}`; }
-  function exportRScript() { window.location.href = `/api/export-r?session_id=${SESSION_ID}`; }
+  // Rapor geçmişi tarayıcıda tutulur ve dışa aktarırken sunucuya gönderilir:
+  // sunucu belleği boşalsa / yeniden başlasa / başka örneğe düşse bile indirme bozulmaz.
+  const REPORT_STORE = [];
+
+  function removeReport(cardId) {
+    const i = REPORT_STORE.findIndex(r => r.id === cardId);
+    if (i >= 0) REPORT_STORE.splice(i, 1);
+    const el = document.getElementById(cardId);
+    if (el) el.remove();
+  }
+
+  async function downloadExport(kind, fallbackName) {
+    if (!REPORT_STORE.length) return toast("Önce en az bir analiz çalıştırın.");
+    try {
+      const history = REPORT_STORE.map(r => ({ title: r.title, apa_note: r.apa_note, notes: r.notes, tables: r.tables, r_code: r.r_code }));
+      const res = await fetch(`/api/export-${kind}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: SESSION_ID, history })
+      });
+      if (!res.ok) {
+        let msg = "İndirme başarısız oldu.";
+        try { const j = await res.json(); if (j && j.detail) msg = j.detail; } catch (e) {}
+        return toast(msg);
+      }
+      const blob = await res.blob();
+      let name = fallbackName;
+      const m = (res.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/);
+      if (m) name = m[1];
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (e) {
+      toast("Bağlantı hatası: dosya indirilemedi.");
+    }
+  }
+
+  function exportWord() { return downloadExport("docx", "Akademik_APA_Raporu.docx"); }
+  function exportExcel() { return downloadExport("xlsx", "Akademik_Analiz_Sonuclari.xlsx"); }
+  function exportRScript() { return downloadExport("r", "Akademik_Analiz_Betigi.R"); }
 
   function saveChartPng(id) {
     const c = document.getElementById(id);
@@ -1353,6 +1392,7 @@
 
   async function clearFeed() {
     repCount = 0;
+    REPORT_STORE.length = 0;
     await fetch(`/api/clear-history?session_id=${SESSION_ID}`, { method: "POST" });
     document.getElementById("reportFeed").innerHTML = `
       <div class="empty-card" id="feedWelcome">
@@ -1435,6 +1475,7 @@
 
     repCount += 1;
     const cardId = `rep_${repCount}`;
+    REPORT_STORE.push({ id: cardId, title: data.title || currentTest.name, apa_note: data.apa_note || "", notes: data.notes || [], tables: data.tables || [], r_code: data.r_code || "" });
     const bodyId = `body_${repCount}`;
     const canvasId = `cv_${repCount}`;
     const rDrawerId = `rdraw_${repCount}`;
@@ -1536,7 +1577,7 @@
           </div>
           <div style="display:flex; gap:6px;">
             <button class="mini-btn" onclick="const b=document.getElementById('${bodyId}'); b.style.display=b.style.display==='none'?'block':'none';">Gizle / Aç</button>
-            <button class="mini-btn" onclick="document.getElementById('${cardId}').remove()">×</button>
+            <button class="mini-btn" onclick="removeReport('${cardId}')">×</button>
           </div>
         </div>
         <div class="report-content" id="${bodyId}">${bodyHtml}</div>
