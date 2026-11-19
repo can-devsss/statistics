@@ -1025,7 +1025,6 @@
   window.CURRENT_SESSION_ID = SESSION_ID;
 
   const TESTS = [
-    // TEMEL & PARAMETRİK OLMAYAN (9)
     { id: "descriptive", cat: "basic", name: "Betimsel & Normallik", desc: "Ortalama, SD, SE, %CV, Medyan, IQR ve Shapiro-Wilk normallik testi.", depBtn: "+ Ekle", depLabel: "Sayısal Değişken(ler)", minDep: 1 },
     { id: "ttest1", cat: "basic", name: "Tek Örneklem T-Testi", desc: "Örneklem ortalamasını belirlenen referans test değeri (μ₀) ile karşılaştırır.", depBtn: "+ Değişken", depLabel: "Sayısal Değişken(ler)", minDep: 1, isMu: true },
     { id: "ttest_ind", cat: "basic", name: "Bağımsız T-Testi", desc: "Levene kontrolüne göre otomatik Student veya Welch t-testi ve Cohen's d hesaplar.", depBtn: "+ Bağımlı", grpBtn: "+ Grup", depLabel: "Bağımlı Değişken(ler)", grpLabel: "2 Kategorili Grup", minDep: 1, needGrp: true },
@@ -1036,21 +1035,18 @@
     { id: "chisq", cat: "basic", name: "Ki-Kare / Fisher Testi", desc: "İki kategorik değişkenin bağımsızlığını, Cramér's V ve 2×2 Fisher kesin testini hesaplar.", depBtn: "+ Satır", grpBtn: "+ Sütun", depLabel: "1. Kategorik Değişken", grpLabel: "2. Kategorik Değişken", minDep: 1, singleDep: true, needGrp: true },
     { id: "mcnemar", cat: "basic", name: "McNemar Testi", desc: "Aynı deneklerdeki iki ikili (0/1) kategorik ölçümün değişimini test eder.", depBtn: "+ Ölçüm", depLabel: "Tam 2 İkili (0/1) Değişken", minDep: 2, exactDep: 2 },
 
-    // İLERİ ANOVA & VARYANS (5)
     { id: "anova", cat: "anova", name: "Tek Yönlü ANOVA + Harf", desc: "ANOVA, η²/ω², Levene'e göre otomatik Tukey veya Games-Howell ve a, b, c harflendirmesi.", depBtn: "+ Bağımlı", grpBtn: "+ Faktör", depLabel: "Bağımlı Değişken (1 Sayısal)", grpLabel: "Faktör (Grup) Değişkeni", minDep: 1, singleDep: true, needGrp: true },
     { id: "factorial_anova", cat: "anova", name: "İki Yönlü ANOVA (A×B)", desc: "Tip III SS ile ana etkileri, etkileşimi (A×B) ve hücre harflendirmesini hesaplar.", depBtn: "+ Bağımlı", grpBtn: "+ Faktör 1", secBtn: "+ Faktör 2", depLabel: "Bağımlı Değişken (1 Sayısal)", grpLabel: "Faktör 1", secLabel: "Faktör 2", minDep: 1, singleDep: true, needGrp: true, needSec: true },
     { id: "rm_anova", cat: "anova", name: "Tekrarlı Ölçümler ANOVA", desc: "Tekrarlı ölçümlerde F testi ve Greenhouse-Geisser küresellik düzeltmesini uygular.", depBtn: "+ Zaman", depLabel: "Tekrarlı Zaman Sütunları (T1, T2...)", minDep: 2 },
     { id: "ancova", cat: "anova", name: "ANCOVA (Kovaryans)", desc: "Sürekli bir kovaryant değişkenin etkisini kontrol altında tutarak grupları karşılaştırır.", depBtn: "+ Bağımlı", grpBtn: "+ Grup", secBtn: "+ Kovaryant", depLabel: "Bağımlı Değişken (1 Sayısal)", grpLabel: "Grup Değişkeni", secLabel: "Sayısal Kovaryant", minDep: 1, singleDep: true, needGrp: true, needSec: true },
     { id: "manova", cat: "anova", name: "MANOVA (Çok Değişkenli)", desc: "Wilks' Lambda, Pillai's Trace, Hotelling-Lawley ve Roy çok değişkenli testlerini hesaplar.", depBtn: "+ Bağımlı", grpBtn: "+ Grup", depLabel: "Bağımlı Değişkenler (En Az 2)", grpLabel: "Grup Değişkeni", minDep: 2, needGrp: true },
 
-    // KORELASYON, REGRESYON & GÜÇ (5)
     { id: "correlation", cat: "model", name: "Korelasyon + Heatmap", desc: "Pearson r ve Spearman rho katsayıları ile renkli korelasyon ısı haritası üretir.", depBtn: "+ Değişken", depLabel: "Sayısal Değişkenler (En Az 2)", minDep: 2 },
     { id: "regression", cat: "model", name: "Çoklu Regresyon + VIF", desc: "Regresyon modeli, VIF çoklu bağıntı kontrolü ve Durbin-Watson otokorelasyon testini yapar.", depBtn: "+ Y / X Ekle", depLabel: "1. Bağımlı (Y), Sonrakiler Bağımsız (X)", minDep: 2 },
     { id: "roc_logistic", cat: "model", name: "Lojistik Reg. & ROC", desc: "İkili (0/1) sonuçlar için Odds Ratio (Exp B), ROC eğrisi ve AUC değerini hesaplar.", depBtn: "+ Y(0/1) / X", depLabel: "1. İkili (0/1) Sonuç Y, Sonrakiler X", minDep: 2 },
     { id: "timeseries", cat: "model", name: "Zaman Serisi & Mann-Kendall", desc: "Doğrusal trend, Mann-Kendall τ, Durbin-Watson ve hareketli ortalama eğrisini hesaplar.", depBtn: "+ Seri", depLabel: "Zaman Serisi Sütunu (1 Sayısal)", minDep: 1, singleDep: true },
     { id: "power", cat: "model", name: "Güç Analizi (N Hesabı)", desc: "Deney öncesi hedeflenen istatistiksel güç için gereken minimum örneklem sayısını hesaplar.", isPower: true },
 
-    // ÖLÇEK, FAKTÖR & SAĞKALIM (5)
     { id: "cronbach", cat: "scale", name: "Cronbach's Alpha", desc: "Ölçek güvenilirliği (α), madde-toplam korelasyonu ve madde silinirse α analizini yapar.", depBtn: "+ Madde", depLabel: "Ölçek Maddeleri (En Az 2)", minDep: 2 },
     { id: "efa", cat: "scale", name: "EFA (KMO & Bartlett)", desc: "KMO örneklem yeterliliği, Bartlett küresellik testi ve faktör yüklerini çıkarır.", depBtn: "+ Madde", depLabel: "Ölçek Maddeleri (En Az 3)", minDep: 3 },
     { id: "pca", cat: "scale", name: "PCA (Temel Bileşenler)", desc: "Boyut indirgeme, özdeğerler (Eigenvalue) ve PC1-PC2 skor dağılım grafiği üretir.", depBtn: "+ Değişken", depLabel: "Sayısal Değişkenler (En Az 2)", minDep: 2 },
