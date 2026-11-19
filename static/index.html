@@ -983,14 +983,22 @@
     scrollOutputIntoView(outEl);
 
     try {
-      const csvRes = await fetch(`/api/raw-csv?session_id=${window.CURRENT_SESSION_ID}`);
-      if (csvRes.ok) {
-        const csvJson = await csvRes.json();
-        await window.webRInstance.FS.writeFile('/data.csv', new TextEncoder().encode(csvJson.csv));
+      const csvRes = await fetch(`/api/raw-csv?session_id=${encodeURIComponent(window.CURRENT_SESSION_ID)}`);
+      if (!csvRes.ok) {
+        throw new Error("Oturum verisi (/api/raw-csv) alınamadı. Önce veri seti yükleyin.");
+      }
+      const csvJson = await csvRes.json();
+      if (!csvJson || typeof csvJson.csv !== "string" || !csvJson.csv.trim()) {
+        throw new Error("Aktif veri seti boş. Lütfen önce veri yükleyin.");
       }
 
+      await window.webRInstance.FS.writeFile('/data.csv', new TextEncoder().encode(csvJson.csv));
+
       const fullScript = `
-        if (file.exists('/data.csv')) { df <- read.csv('/data.csv') }
+        df <- read.csv('/data.csv', stringsAsFactors = FALSE, check.names = FALSE)
+        if (!is.data.frame(df) || nrow(df) == 0) {
+          stop("Gecerli bir veri tablosu (df) olusturulamadi.")
+        }
         ${rawRCode}
       `;
 
@@ -1002,11 +1010,11 @@
       });
 
       const lines = result.output.map(o => o.data).join('\n').trim();
-      outEl.innerText = lines || "> İşlem tamamlandı.";
+      outEl.innerText = lines || "> İşlem tamamlandı (çıktı satırı boş).";
       await shelter.purge();
       scrollOutputIntoView(outEl);
     } catch (e) {
-      outEl.innerText = `> R Konsol Notu: ${e.message}`;
+      outEl.innerText = `> R Konsol Hatası: ${e.message}`;
       scrollOutputIntoView(outEl);
     }
   };
@@ -1059,6 +1067,7 @@
   let repCount = 0;
   const chartsMap = {};
   const rCodesRegistry = {};
+  const apaRegistry = {};
 
   function isDark() { return document.body.classList.contains("dark-mode"); }
 
@@ -1336,11 +1345,14 @@
     ch.update();
   }
 
-  function copyStr(txt, btn) {
-    navigator.clipboard.writeText(txt);
-    const old = btn.innerText;
-    btn.innerText = "Kopyalandı ✓";
-    setTimeout(() => btn.innerText = old, 1400);
+  function copyFromRegistry(mapObj, key, btn) {
+    const txt = mapObj[key];
+    if (typeof txt !== "string") return;
+    navigator.clipboard.writeText(txt).then(() => {
+      const old = btn.innerText;
+      btn.innerText = "Kopyalandı ✓";
+      setTimeout(() => { btn.innerText = old; }, 1400);
+    });
   }
 
   async function clearFeed() {
@@ -1435,11 +1447,11 @@
 
     let bodyHtml = "";
     if (data.apa_note) {
-      const safe = data.apa_note.replace(/'/g, "\\'");
+      apaRegistry[repCount] = data.apa_note;
       bodyHtml += `
         <div class="apa-callout">
           <div class="apa-callout-text"><b>Otomatik APA Bulgu Özeti:</b> ${data.apa_note}</div>
-          <button class="mini-btn" onclick="copyStr('${safe}', this)">Kopyala</button>
+          <button class="mini-btn" onclick="copyFromRegistry(apaRegistry, ${repCount}, this)">Kopyala</button>
         </div>`;
     }
 
@@ -1499,7 +1511,6 @@
 
     if (data.r_code) {
       rCodesRegistry[repCount] = data.r_code;
-      const safeR = data.r_code.replace(/`/g, "\\`").replace(/\n/g, "\\n");
       bodyHtml += `
         <div class="section-block">
           <div class="r-drawer">
@@ -1507,7 +1518,7 @@
               <span class="section-title" style="font-size:12.5px;">R Script & Canlı WebR Doğrulama Konsolu</span>
               <div class="r-drawer-actions">
                 <button class="mini-btn r-exec" onclick="window.runRealRCode(rCodesRegistry[${repCount}], '${rOutId}', '${rDrawerId}')">▶ R'da Çalıştır</button>
-                <button class="mini-btn" onclick="copyStr('${safeR}', this)">Kopyala</button>
+                <button class="mini-btn" onclick="copyFromRegistry(rCodesRegistry, ${repCount}, this)">Kopyala</button>
                 <button class="mini-btn" onclick="const d=document.getElementById('${rDrawerId}'); d.style.display=d.style.display==='block'?'none':'block';">Kodu Göster ▾</button>
               </div>
             </div>
