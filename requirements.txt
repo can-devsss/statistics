@@ -1,11 +1,12 @@
 fastapi
 uvicorn
 numpy
-pandas
-scipy
-scikit-learn
-statsmodels
+pandas>=2.0,<3
+scipy>=1.11
+scikit-learn>=1.2
+statsmodels>=0.14
 python-docx
 openpyxl
+xlrd
 python-multipart
 pyreadstat
